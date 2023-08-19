@@ -1,0 +1,33 @@
+#!/bin/rc
+rfork e
+ts=`{date -n}
+tmpfile=/tmp/wpsearch.$ts
+wanthtml=n
+
+fn sigint {
+	rm -f $tmpfile
+}
+
+fn usage {
+	echo usage: $0 [-h] query >[1=2]
+	exit usage
+}
+
+if(~ $#* 0)
+	usage
+switch($1){
+case -*h*
+	wanthtml=y
+	shift
+}
+{
+	echo -n '{"result":'
+	hget 'https://en.wikipedia.org/w/api.php?action=opensearch&format=json&search='^$"*
+	echo -n '}'
+} >$tmpfile
+targ=`{wpqprompt $tmpfile | tr ' ' '_'}
+rm -f $tmpfile
+if(~ $wanthtml y)
+	plumb 'https://en.wikipedia.org/wiki/'^$targ
+if not
+	hget 'https://en.wikipedia.org/api/rest_v1/page/pdf/'^$targ | page -w -p145
